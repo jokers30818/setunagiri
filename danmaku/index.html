@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Monochrome Danmaku - Undertale x Touhou</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+        }
+        canvas {
+            border: 2px solid #ffffff;
+            background-color: #000000;
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="480" height="640"></canvas>
+
+<script>
+const CANVAS_WIDTH = 480;
+const CANVAS_HEIGHT = 640;
+const PLAYER_SIZE = 8;
+const PLAYER_HITBOX = 2;
+const BULLET_SIZE = 4;
+const INVINCIBLE_DURATION = 120;
+
+const keys = {};
+window.addEventListener('keydown', e => keys[e.code] = true);
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+class MessageWindow {
+    constructor() {
+        this.fullText = "";
+        this.displayedText = "";
+        this.charIndex = 0;
+        this.timer = 0;
+        this.active = false;
+        this.messageDuration = 0;
+    }
+
+    show(text) {
+        this.fullText = text;
+        this.displayedText = "";
+        this.charIndex = 0;
+        this.timer = 0;
+        this.active = true;
+        this.messageDuration = 180; // Show for 3 seconds after fully typed
+    }
+
+    update() {
+        if (!this.active) return;
+        
+        if (this.charIndex < this.fullText.length) {
+            this.timer++;
+            if (this.timer % 3 === 0) {
+                this.displayedText += this.fullText[this.charIndex];
+                this.charIndex++;
+            }
+        } else {
+            this.messageDuration--;
+            if (this.messageDuration <= 0) {
+                this.active = false;
+            }
+        }
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+        
+        const boxHeight = 100;
+        const margin = 20;
+        const boxY = CANVAS_HEIGHT - boxHeight - margin;
+        
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(margin, boxY, CANVAS_WIDTH - margin * 2, boxHeight);
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(margin, boxY, CANVAS_WIDTH - margin * 2, boxHeight);
+        
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '16px "Courier New", monospace';
+        ctx.textAlign = 'left';
+        
+        const lines = this.displayedText.split('\n');
+        for(let i=0; i<lines.length; i++) {
+            ctx.fillText(lines[i], margin + 20, boxY + 35 + i * 25);
+        }
+    }
+}
+
+class Bullet {
+    constructor(x, y, vx, vy, type = 'normal', extra = {}) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.type = type;
+        this.active = true;
+        this.bounced = false;
+        this.timer = 0;
+        this.extra = extra;
+    }
+
+    update() {
+        this.timer++;
+        
+        if (this.type === 'bone') {
+            this.vy += 0.05; // gravity
+            this.x += this.vx;
+            this.y += this.vy;
+        } else if (this.type === 'ghost') {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (!this.bounced) {
+                if (this.x <= 0 || this.x >= CANVAS_WIDTH) {
+                    this.vx *= -1;
+                    this.bounced = true;
+                }
+            }
+        } else if (this.type === 'laser') {
+            if (this.timer >= this.extra.duration) {
+                this.active = false;
+            }
+        } else {
+            this.x += this.vx;
+            this.y += this.vy;
+        }
+
+        if (this.type !== 'laser') {
+            if (this.x < -10 || this.x > CANVAS_WIDTH + 10 || 
+                this.y < -10 || this.y > CANVAS_HEIGHT + 10) {
+                this.active = false;
+            }
+        }
+    }
+
+    draw(ctx) {
+        if (this.type === 'laser') {
+            const isWarning = this.timer < this.extra.warnDuration;
+            if (isWarning) {
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                ctx.fillRect(this.x - this.extra.width / 2, 0, this.extra.width, CANVAS_HEIGHT);
+                ctx.fillStyle = '#FF0000';
+                ctx.fillRect(this.x - 1, 0, 2, CANVAS_HEIGHT); 
+            } else {
+                ctx.fillStyle = '#FFFFFF';
+                // Fire phase
+                const t = this.timer - this.extra.warnDuration;
+                if (t < 5) {
+                    ctx.fillRect(this.x - this.extra.width / 2, 0, this.extra.width, CANVAS_HEIGHT);
+                } else if (t < 15) {
+                    const shrink = this.extra.width * (1 - (t - 5) / 10);
+                    ctx.fillRect(this.x - shrink / 2, 0, shrink, CANVAS_HEIGHT);
+                } else {
+                    this.active = false;
+                }
+            }
+            return;
+        }
+
+        ctx.fillStyle = '#FFFFFF';
+        
+        if (this.type === 'ghost') {
+            const alpha = 0.3 + Math.sin(this.timer * 0.1) * 0.7; 
+            ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+        }
+
+        if (this.type === 'bone') {
+            ctx.fillRect(this.x - 2, this.y - 6, 4, 12);
+        } else {
+            ctx.fillRect(this.x - BULLET_SIZE / 2, this.y - BULLET_SIZE / 2, BULLET_SIZE, BULLET_SIZE);
+        }
+        
+        ctx.globalAlpha = 1.0;
+    }
+    
+    checkCollision(player, hitboxRadius) {
+        if (!this.active) return false;
+        if (this.type === 'laser') {
+            const isWarning = this.timer < this.extra.warnDuration;
+            if (!isWarning && this.timer < this.extra.warnDuration + 5) {
+                if (Math.abs(player.x - this.x) < (this.extra.width / 2 + hitboxRadius)) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            const dx = this.x - player.x;
+            const dy = this.y - player.y;
+            return Math.sqrt(dx * dx + dy * dy) < (hitboxRadius + BULLET_SIZE / 2);
+        }
+    }
+}
+
+class Player {
+    constructor() {
+        this.reset();
+        this.lives = 3;
+        this.invincibleTimer = 0;
+    }
+
+    reset() {
+        this.x = CANVAS_WIDTH / 2;
+        this.y = CANVAS_HEIGHT * 0.8;
+    }
+
+    update() {
+        const isShift = keys['ShiftLeft'] || keys['ShiftRight'];
+        const speed = isShift ? 2 : 4;
+
+        if (keys['ArrowUp'] && this.y > 0) this.y -= speed;
+        if (keys['ArrowDown'] && this.y < CANVAS_HEIGHT) this.y += speed;
+        if (keys['ArrowLeft'] && this.x > 0) this.x -= speed;
+        if (keys['ArrowRight'] && this.x < CANVAS_WIDTH) this.x += speed;
+
+        if (this.invincibleTimer > 0) this.invincibleTimer--;
+    }
+
+    draw(ctx) {
+        if (this.invincibleTimer % 4 < 2) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y + 4);
+            ctx.lineTo(this.x - 4, this.y);
+            ctx.arc(this.x - 2, this.y - 2, 2, Math.PI, 0);
+            ctx.arc(this.x + 2, this.y - 2, 2, Math.PI, 0);
+            ctx.lineTo(this.x + 4, this.y);
+            ctx.closePath();
+            ctx.fill();
+
+            if (keys['ShiftLeft'] || keys['ShiftRight']) {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(this.x - 1, this.y - 1, 2, 2);
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.strokeRect(this.x - 2, this.y - 2, 4, 4);
+            }
+        }
+    }
+}
+
+class Enemy {
+    constructor(msgWindow) {
+        this.x = CANVAS_WIDTH / 2;
+        this.y = 100;
+        this.timer = 0;
+        this.bossPhase = 0; 
+        this.phaseTimer = 0;
+        this.msgWindow = msgWindow;
+        
+        this.images = [new Image(), new Image(), new Image()];
+        this.images[0].src = '../image/Gemini_Generated_Image_cjyq0zcjyq0zcjyq.png'; 
+        this.images[1].src = '../image/Gemini_Generated_Image_ibm6isibm6isibm6.png'; 
+        this.images[2].src = '../image/Gemini_Generated_Image_h4zbpbh4zbpbh4zb.png'; 
+        
+        this.taunts = [
+            "* 避けるのが上手いね。",
+            "* 次は避けられるかな？",
+            "* 焦らずに見極めて。",
+            "* 結構やるね。"
+        ];
+    }
+    
+    startPhase(phase) {
+        this.bossPhase = phase;
+        this.phaseTimer = 0;
+        
+        if (phase === 0) this.msgWindow.show("* ズブの素人か？ 骨が折れるぜ。");
+        else if (phase === 1) this.msgWindow.show("* ぼくのこと、見えてる…？");
+        else if (phase === 2) this.msgWindow.show("* ターゲット捕捉。排除プロセスを開始シマス。");
+    }
+
+    update(difficulty, bullets, player) {
+        this.timer++;
+        this.phaseTimer++;
+        
+        if (this.phaseTimer >= 600) {
+            let nextPhase = (this.bossPhase + 1) % 3;
+            bullets.length = 0;
+            this.startPhase(nextPhase);
+        }
+
+        if (this.phaseTimer === 300) {
+            this.msgWindow.show(this.taunts[Math.floor(Math.random() * this.taunts.length)]);
+        }
+
+        this.x = CANVAS_WIDTH / 2 + Math.sin(this.timer / 30) * 100;
+
+        let diffScale = difficulty === 'EASY' ? 0.7 : difficulty === 'HARD' ? 1.5 : 1.0;
+
+        if (this.bossPhase === 0) { 
+            let interval = Math.max(5, Math.floor(15 / diffScale));
+            if (this.timer % interval === 0) {
+                const vx = (Math.random() - 0.5) * 8 * diffScale;
+                const vy = -3 - Math.random() * 2; 
+                bullets.push(new Bullet(this.x, this.y, vx, vy, 'bone'));
+            }
+        } 
+        else if (this.bossPhase === 1) { 
+            let interval = Math.max(10, Math.floor(25 / diffScale));
+            if (this.timer % interval === 0) {
+                const count = Math.floor(4 * diffScale);
+                for (let i = 0; i < count; i++) {
+                    const angle = Math.PI/2 + (Math.random() - 0.5) * 2; 
+                    const speed = (2 + Math.random() * 2) * diffScale;
+                    bullets.push(new Bullet(this.x, this.y, Math.cos(angle) * speed, Math.sin(angle) * speed, 'ghost'));
+                }
+            }
+        } 
+        else if (this.bossPhase === 2) { 
+            let interval = Math.max(15, Math.floor(40 / diffScale));
+            if (this.timer % interval === 0 && player) {
+                const dx = player.x - this.x;
+                const dy = player.y - this.y;
+                let targetAngle = Math.atan2(dy, dx);
+                const speed = 4 * diffScale;
+                const spread = 0.2 / diffScale; 
+                for (let offset of [-spread, 0, spread]) {
+                    const a = targetAngle + offset;
+                    bullets.push(new Bullet(this.x, this.y, Math.cos(a) * speed, Math.sin(a) * speed, 'normal'));
+                }
+            }
+            
+            let laserInterval = Math.max(100, Math.floor(200 / diffScale));
+            if (this.timer % laserInterval === 0 && player) {
+                bullets.push(new Bullet(player.x, 0, 0, 0, 'laser', { width: 60 * diffScale, warnDuration: 40, duration: 60 }));
+            }
+        }
+    }
+
+    draw(ctx) {
+        const img = this.images[this.bossPhase];
+        if (img && img.complete && img.naturalHeight !== 0) {
+            const size = 120;
+            ctx.drawImage(img, this.x - size / 2, this.y - size / 2, size, size);
+        } else {
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.x - 20, this.y - 20, 40, 40);
+        }
+    }
+}
+
+class Game {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.state = 'MENU';
+        this.difficulty = 'NORMAL';
+        this.score = 0;
+        this.hiScore = 0;
+        this.player = new Player();
+        this.msgWindow = new MessageWindow();
+        this.enemy = new Enemy(this.msgWindow);
+        this.bullets = [];
+        
+        this.initMenu();
+    }
+
+    initMenu() {
+        window.addEventListener('mousedown', (e) => {
+            if (this.state !== 'MENU') return;
+            const rect = this.canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            if (mouseX > 140 && mouseX < 340) {
+                if (mouseY > 250 && mouseY < 290) this.startGame('EASY');
+                else if (mouseY > 300 && mouseY < 340) this.startGame('NORMAL');
+                else if (mouseY > 350 && mouseY < 390) this.startGame('HARD');
+            }
+        });
+    }
+
+    startGame(diff) {
+        this.difficulty = diff;
+        this.state = 'PLAYING';
+        this.score = 0;
+        this.player.lives = 3;
+        this.player.reset();
+        this.bullets = [];
+        this.enemy.startPhase(0); 
+    }
+
+    update() {
+        if (this.state === 'PLAYING') {
+            this.player.update();
+            this.msgWindow.update();
+            this.enemy.update(this.difficulty, this.bullets, this.player);
+            this.score++;
+
+            for (let i = this.bullets.length - 1; i >= 0; i--) {
+                let b = this.bullets[i];
+                b.update();
+                if (!b.active) {
+                    this.bullets.splice(i, 1);
+                    continue;
+                }
+
+                if (this.player.invincibleTimer === 0) {
+                    if (b.checkCollision(this.player, PLAYER_HITBOX)) {
+                        this.player.lives--;
+                        this.player.invincibleTimer = INVINCIBLE_DURATION;
+                        
+                        const hitMsg = ["* 痛っ！", "* しっかりして！", "* クリティカルヒット！"][Math.floor(Math.random()*3)];
+                        this.msgWindow.show(hitMsg);
+
+                        if (this.player.lives <= 0) {
+                            this.state = 'GAMEOVER';
+                            if (this.score > this.hiScore) this.hiScore = this.score;
+                        }
+                    }
+                }
+            }
+        } else if (this.state === 'GAMEOVER' && keys['KeyR']) {
+            this.state = 'MENU';
+            this.msgWindow.active = false;
+        }
+    }
+
+    draw() {
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        if (this.state === 'MENU') {
+            this.drawText("DANMAKU SOUL", CANVAS_WIDTH / 2, 150, 30);
+            this.drawButton("EASY", 270);
+            this.drawButton("NORMAL", 320);
+            this.drawButton("HARD", 370);
+        } 
+        else if (this.state === 'PLAYING' || this.state === 'GAMEOVER') {
+            this.enemy.draw(ctx);
+            this.bullets.forEach(b => b.draw(ctx));
+            this.player.draw(ctx);
+            this.msgWindow.draw(ctx);
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '16px "Courier New"';
+            ctx.textAlign = 'left';
+            ctx.fillText(`SCORE: ${this.score.toString().padStart(8, '0')}`, 20, 30);
+            ctx.fillText(`HISCORE: ${this.hiScore.toString().padStart(8, '0')}`, 20, 55);
+            ctx.fillText("LIVES: ", 320, 30);
+            for (let i = 0; i < this.player.lives; i++) {
+                ctx.fillText("❤", 380 + (i * 20), 30);
+            }
+
+            if (this.state === 'GAMEOVER') {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                this.drawText("GAME OVER", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 40);
+                this.drawText("PRESS 'R' TO RETURN", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 50, 20);
+            }
+        }
+    }
+
+    drawText(text, x, y, size) {
+        this.ctx.fillStyle = '#FFFFFF';
+        this.ctx.font = `${size}px "Courier New"`;
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(text, x, y);
+    }
+
+    drawButton(text, y) {
+        this.ctx.strokeStyle = '#FFFFFF';
+        this.ctx.strokeRect(140, y - 25, 200, 40);
+        this.drawText(text, CANVAS_WIDTH / 2, y + 2, 20);
+    }
+
+    loop() {
+        this.update();
+        this.draw();
+        requestAnimationFrame(() => this.loop());
+    }
+}
+
+const game = new Game();
+game.loop();
+</script>
+</body>
+</html>
