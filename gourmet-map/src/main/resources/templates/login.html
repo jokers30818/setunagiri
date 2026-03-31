@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン - 身内グルメマップ</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="container">
+    <div class="card" style="margin-top: 50px;">
+        <h2 style="text-align: center; color: var(--primary-color);">身内グルメマップ</h2>
+        <p style="text-align: center; margin-bottom: 20px;">合言葉を入力してください</p>
+        
+        <div th:if="${param.error}" class="alert alert-danger" id="error-message">
+            合言葉が間違っています。
+        </div>
+        <div th:if="${param.logout}" class="alert alert-info" id="logout-message">
+            ログアウトしました。
+        </div>
+        
+        <form th:action="@{/login}" method="post">
+            <input type="hidden" name="username" value="miuchi">
+            <div class="form-group">
+                <input type="password" name="password" id="password" placeholder="合言葉" required autofocus>
+            </div>
+            <button type="submit" class="btn" id="login-btn">入室</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

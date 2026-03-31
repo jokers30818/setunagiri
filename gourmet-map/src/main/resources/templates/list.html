@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一覧 - 身内グルメマップ</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <h1>身内グルメマップ</h1>
+    <div class="header-actions">
+        <form th:action="@{/logout}" method="post" style="display:inline;">
+            <button type="submit" id="logout-btn">ログアウト</button>
+        </form>
+    </div>
+</header>
+<div class="container">
+    <div class="card">
+        <form class="filter-form" th:action="@{/}" method="get">
+            <select name="category" id="filter-category">
+                <option value="">すべてのカテゴリ</option>
+                <option value="ラーメン" th:selected="${selectedCategory == 'ラーメン'}">ラーメン</option>
+                <option value="居酒屋" th:selected="${selectedCategory == '居酒屋'}">居酒屋</option>
+                <option value="カフェ" th:selected="${selectedCategory == 'カフェ'}">カフェ</option>
+                <option value="イタリアン" th:selected="${selectedCategory == 'イタリアン'}">イタリアン</option>
+                <option value="その他" th:selected="${selectedCategory == 'その他'}">その他</option>
+            </select>
+            <select name="budget" id="filter-budget">
+                <option value="">すべての予算</option>
+                <option value="～1000円" th:selected="${selectedBudget == '～1000円'}">～1000円</option>
+                <option value="～3000円" th:selected="${selectedBudget == '～3000円'}">～3000円</option>
+                <option value="～5000円" th:selected="${selectedBudget == '～5000円'}">～5000円</option>
+                <option value="5000円～" th:selected="${selectedBudget == '5000円～'}">5000円～</option>
+            </select>
+            <button type="submit" class="btn" style="width: auto;" id="filter-btn">検索</button>
+        </form>
+    </div>
+
+    <div th:each="shop : ${shops}" class="card shop-card">
+        <a th:href="@{/detail/{id}(id=${shop.id})}" class="shop-item">
+            <div class="shop-header">
+                <h3 class="shop-title" th:text="${shop.name}">店名</h3>
+                <div style="display: flex; gap: 10px;">
+                    <div class="shop-rating" style="color: #3498db; font-weight: bold;" th:if="${shop.reactionCount > 0}">👍 <span th:text="${shop.reactionCount}">0</span></div>
+                    <div class="shop-rating">★ <span th:text="${shop.rating}">3</span></div>
+                </div>
+            </div>
+            <div class="shop-meta">
+                <span class="shop-category" th:text="${shop.category}">カテゴリ</span>
+                <span class="shop-budget" th:text="${shop.budget}">予算</span>
+                <span class="shop-hideaway" th:if="${shop.hideawayLevel != null and !shop.hideawayLevel.isEmpty()}" th:text="'隠れ家度: ' + ${shop.hideawayLevel}">隠れ家度</span>
+            </div>
+            <p class="shop-comment" th:text="${shop.comment}">コメントが入ります</p>
+        </a>
+    </div>
+    
+    <div th:if="${#lists.isEmpty(shops)}" class="card empty-state">
+        <p style="text-align: center;">まだ投稿がありません。</p>
+    </div>
+    
+    <a th:href="@{/form}" class="floating-action" id="new-post-btn">+</a>
+</div>
+</body>
+</html>

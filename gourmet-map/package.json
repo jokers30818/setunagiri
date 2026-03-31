@@ -1,0 +1,13 @@
+{
+  "name": "gourmet-map-tests",
+  "version": "1.0.0",
+  "description": "Cypress E2E tests for Gourmet Map",
+  "scripts": {
+    "test:desktop": "cypress run --config viewportWidth=1280,viewportHeight=720",
+    "test:mobile": "cypress run --config viewportWidth=375,viewportHeight=812",
+    "test": "cypress run"
+  },
+  "devDependencies": {
+    "cypress": "^13.7.0"
+  }
+}

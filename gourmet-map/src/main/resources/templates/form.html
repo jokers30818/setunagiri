@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新規投稿 - 身内グルメマップ</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <h1>新規投稿</h1>
+    <div class="header-actions">
+        <a th:href="@{/}">戻る</a>
+    </div>
+</header>
+<div class="container">
+    <div class="card">
+        <form th:action="@{/form}" th:object="${shop}" method="post">
+            <div class="form-group">
+                <label for="name">店名 <span style="color:red">*</span></label>
+                <input type="text" id="name" th:field="*{name}" maxlength="100" required>
+                <span class="error-message" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Name Error</span>
+            </div>
+
+            <div class="form-group">
+                <label for="category">カテゴリ <span style="color:red">*</span></label>
+                <select id="category" th:field="*{category}" required>
+                    <option value="">選択してください</option>
+                    <option value="ラーメン">ラーメン</option>
+                    <option value="居酒屋">居酒屋</option>
+                    <option value="カフェ">カフェ</option>
+                    <option value="イタリアン">イタリアン</option>
+                    <option value="その他">その他</option>
+                </select>
+                <span class="error-message" th:if="${#fields.hasErrors('category')}" th:errors="*{category}">Category Error</span>
+            </div>
+
+            <div class="form-group">
+                <label for="rating">評価 (1-5) <span style="color:red">*</span></label>
+                <input type="number" id="rating" th:field="*{rating}" min="1" max="5" required>
+                <span class="error-message" id="rating-error" th:if="${#fields.hasErrors('rating')}" th:errors="*{rating}">Rating Error</span>
+            </div>
+
+            <div class="form-group">
+                <label for="budget">予算感 <span style="color:red">*</span></label>
+                <select id="budget" th:field="*{budget}" required>
+                    <option value="">選択してください</option>
+                    <option value="～1000円">～1000円</option>
+                    <option value="～3000円">～3000円</option>
+                    <option value="～5000円">～5000円</option>
+                    <option value="5000円～">5000円～</option>
+                </select>
+                <span class="error-message" th:if="${#fields.hasErrors('budget')}" th:errors="*{budget}">Budget Error</span>
+            </div>
+
+            <div class="form-group">
+                <label for="hideawayLevel">隠れ家度 (任意)</label>
+                <select id="hideawayLevel" th:field="*{hideawayLevel}">
+                    <option value="">指定なし</option>
+                    <option value="高">高</option>
+                    <option value="中">中</option>
+                    <option value="低">低</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="comment">推しポイント <span style="color:red">*</span></label>
+                <textarea id="comment" th:field="*{comment}" maxlength="500" required placeholder="お店の魅力やおすすめメニューなど"></textarea>
+                <span class="error-message" id="comment-error" th:if="${#fields.hasErrors('comment')}" th:errors="*{comment}">Comment Error</span>
+            </div>
+
+            <button type="submit" class="btn" id="submit-btn">投稿する</button>
+            <a th:href="@{/}" class="btn btn-secondary" style="margin-top: 10px;">キャンセル</a>
+        </form>
+    </div>
+</div>
+</body>
+</html>

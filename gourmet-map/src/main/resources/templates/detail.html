@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${shop.name} + ' - 身内グルメマップ'">詳細 - 身内グルメマップ</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <h1>お店詳細</h1>
+    <div class="header-actions">
+        <a th:href="@{/}">戻る</a>
+    </div>
+</header>
+<div class="container">
+    <div class="card detail-content">
+        <h2 style="color: var(--primary-color); margin-top:0;" th:text="${shop.name}">店名</h2>
+        
+        <div class="detail-item">
+            <div class="detail-label">カテゴリ</div>
+            <div class="detail-value" th:text="${shop.category}">カテゴリ</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">評価</div>
+            <div class="detail-value" style="color: var(--secondary-color); font-weight: bold;">
+                <span th:text="${'★ ' + shop.rating}"></span>
+            </div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">予算感</div>
+            <div class="detail-value" th:text="${shop.budget}">予算</div>
+        </div>
+        
+        <div th:if="${shop.hideawayLevel != null and !shop.hideawayLevel.isEmpty()}" class="detail-item">
+            <div class="detail-label">隠れ家度</div>
+            <div class="detail-value" th:text="${shop.hideawayLevel}">中</div>
+        </div>
+        
+        <div class="detail-item">
+            <div class="detail-label">推しポイント</div>
+            <div class="detail-value" style="white-space: pre-wrap;" th:text="${shop.comment}">コメント</div>
+        </div>
+        
+        <div class="detail-item" style="border-bottom: none; color: #b2bec3; font-size: 0.8rem; padding-bottom: 0;">
+            投稿日時: <span th:text="${#temporals.format(shop.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <a th:href="@{'https://www.google.com/maps/search/?api=1&query=' + ${shop.name}}" target="_blank" rel="noopener noreferrer" class="btn btn-maps" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 5px;">
+            📍 Google Maps で開く
+        </a>
+        
+        <form th:action="@{/reaction/{id}(id=${shop.id})}" method="post" style="flex: 1;">
+            <button type="submit" class="btn btn-reaction" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 5px;">
+                👍 行ったよ！ <span class="badge" th:text="${shop.reactionCount}">0</span>
+            </button>
+        </form>
+    </div>
+
+    <a th:href="@{/}" class="btn btn-secondary">一覧へ戻る</a>
+</div>
+</body>
+</html>

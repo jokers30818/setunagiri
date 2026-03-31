@@ -1,0 +1,265 @@
+/* Modern and simple mobile-friendly CSS */
+:root {
+    --primary-color: #ff6b6b;
+    --secondary-color: #feca57;
+    --background: #f7f9fa;
+    --text-color: #2d3436;
+    --border-color: #dfe6e9;
+    --card-bg: #ffffff;
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.header-actions a, .header-actions form button {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #636e72;
+}
+
+input[type="text"], input[type="password"], select, textarea, input[type="number"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+textarea {
+    resize: vertical;
+    height: 100px;
+}
+
+.btn {
+    display: inline-block;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 12px 20px;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    width: 100%;
+    transition: background-color 0.2s;
+}
+
+.btn:hover {
+    background-color: #ff5252;
+}
+
+.btn-secondary {
+    background-color: #b2bec3;
+}
+
+.btn-secondary:hover {
+    background-color: #636e72;
+}
+
+.btn-maps {
+    background-color: #4CAF50;
+}
+
+.btn-maps:hover {
+    background-color: #45a049;
+}
+
+.btn-reaction {
+    background-color: #3498db;
+}
+
+.btn-reaction:hover {
+    background-color: #2980b9;
+}
+
+.badge {
+    background: white;
+    color: #3498db;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.filter-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filter-form select {
+    flex: 1;
+}
+
+.error-message {
+    color: #d63031;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: block;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+}
+
+.alert-danger {
+    background-color: #ffeaa7;
+    color: #d63031;
+    border: 1px solid #fdcb6e;
+}
+
+.alert-info {
+    background-color: #81ecec;
+    color: #00cec9;
+    border: 1px solid #00cec9;
+}
+
+/* Shop List Styles */
+.shop-item {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform 0.2s;
+}
+
+.shop-item:hover {
+    transform: translateY(-2px);
+}
+
+.shop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.shop-title {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+}
+
+.shop-meta span {
+    display: inline-block;
+    background: #eee;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin-right: 5px;
+    color: #636e72;
+}
+
+.shop-rating {
+    color: var(--secondary-color);
+    font-weight: bold;
+}
+
+.shop-comment {
+    margin: 10px 0 0 0;
+    color: #636e72;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* Detail view */
+.detail-item {
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+}
+.detail-item:last-child {
+    border-bottom: none;
+}
+.detail-label {
+    font-size: 0.85rem;
+    color: #636e72;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.detail-value {
+    font-size: 1.1rem;
+    margin-top: 5px;
+}
+
+.floating-action {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--primary-color);
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    text-decoration: none;
+    box-shadow: 0 4px 10px rgba(255,107,107,0.4);
+    transition: transform 0.2s;
+}
+
+.floating-action:hover {
+    transform: scale(1.1);
+}
